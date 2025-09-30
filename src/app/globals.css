@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: 0 0% 100%;
+  --color-foreground: 222.2 84% 4.9%;
+  --color-card: 0 0% 100%;
+  --color-card-foreground: 222.2 84% 4.9%;
+  --color-popover: 0 0% 100%;
+  --color-popover-foreground: 222.2 84% 4.9%;
+  --color-primary: 220 100% 20%; /* Navy Blue */
+  --color-primary-foreground: 0 0% 100%; /* White */
+  --color-secondary: 220 100% 20%; /* Navy Blue */
+  --color-secondary-foreground: 0 0% 100%; /* White */
+  --color-muted: 220 13% 91%; /* Light Grey */
+  --color-muted-foreground: 215.4 16.3% 46.9%;
+  --color-accent: 220 100% 20%; /* Navy Blue */
+  --color-accent-foreground: 0 0% 100%; /* White */
+  --color-destructive: 0 84.2% 60.2%;
+  --color-destructive-foreground: 0 0% 100%; /* White */
+  --color-border: 220 13% 91%; /* Light Grey */
+  --color-input: 220 13% 91%; /* Light Grey */
+  --color-ring: 220 100% 20%; /* Navy Blue */
+  --color-radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-background: 222.2 84% 4.9%;
+    --color-foreground: 0 0% 100%; /* White */
+    --color-card: 222.2 84% 4.9%;
+    --color-card-foreground: 0 0% 100%; /* White */
+    --color-popover: 222.2 84% 4.9%;
+    --color-popover-foreground: 0 0% 100%; /* White */
+    --color-primary: 220 100% 20%; /* Navy Blue */
+    --color-primary-foreground: 0 0% 100%; /* White */
+    --color-secondary: 220 100% 20%; /* Navy Blue */
+    --color-secondary-foreground: 0 0% 100%; /* White */
+    --color-muted: 220 13% 91%; /* Light Grey */
+    --color-muted-foreground: 215 20.2% 65.1%;
+    --color-accent: 220 100% 20%; /* Navy Blue */
+    --color-accent-foreground: 0 0% 100%; /* White */
+    --color-destructive: 0 62.8% 30.6%;
+    --color-destructive-foreground: 0 0% 100%; /* White */
+    --color-border: 220 13% 91%; /* Light Grey */
+    --color-input: 220 13% 91%; /* Light Grey */
+    --color-ring: 220 100% 20%; /* Navy Blue */
+  }
+}
+
+body {
+  background: hsl(var(--color-background));
+  color: hsl(var(--color-foreground));
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Just Dogs Brand Colors - Navy and White Theme */
+.brand-navy {
+  background-color: rgb(0 32 96); /* Navy Blue */
+  color: white;
+}
+
+.brand-white {
+  background-color: rgb(255 255 255); /* White */
+  color: rgb(0 32 96); /* Navy Blue text */
+}
+
+.brand-navy-text {
+  color: rgb(0 32 96); /* Navy Blue text */
+}
+
+.brand-white-text {
+  color: rgb(255 255 255); /* White text */
+}
+
+/* Service-specific colors - All using navy and white */
+.service-pet-care {
+  background-color: rgb(0 32 96); /* Navy Blue */
+  color: white;
+}
+
+.service-dog-sitting {
+  background-color: rgb(0 32 96); /* Navy Blue */
+  color: white;
+}
+
+.service-dog-training {
+  background-color: rgb(0 32 96); /* Navy Blue */
+  color: white;
+}
+
+.service-private-training {
+  background-color: rgb(0 32 96); /* Navy Blue */
+  color: white;
+}
+
+.service-consult {
+  background-color: rgb(255 255 255); /* White */
+  color: rgb(0 32 96); /* Navy Blue text */
+  border: 2px solid rgb(0 32 96);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgb(243 244 246);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgb(0 32 96); /* Navy Blue */
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(0 24 72); /* Darker Navy Blue */
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Focus styles for accessibility */
+.focus-visible\:outline-none:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus-visible\:ring-2:focus-visible {
+  box-shadow: 0 0 0 2px rgb(0 32 96); /* Navy Blue ring */
+}
+
