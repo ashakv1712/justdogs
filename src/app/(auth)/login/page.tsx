@@ -117,30 +117,6 @@ function LoginForm() {
             </Link>
           </div>
         </div>
-
-        {/* Demo Accounts */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Accounts</h3>
-          <div className="space-y-2 text-xs text-gray-600">
-            <div>
-              <strong>Admin:</strong> admin@justdogs.co.za / admin123
-            </div>
-            <div>
-              <strong>Trainer:</strong> trainer@justdogs.co.za / trainer123
-            </div>
-            <div>
-              <strong>Parent:</strong> parent@justdogs.co.za / parent123
-            </div>
-          </div>
-          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
-            <strong>Note:</strong> These are demo accounts for testing. In production, users would create their own accounts.
-          </div>
-        </div>
-
-        {/* Development Info */}
-        <div className="mt-4 p-2 bg-[rgb(0_32_96)] bg-opacity-10 border border-[rgb(0_32_96)] border-opacity-20 rounded text-xs text-[rgb(0_32_96)]">
-          <strong>Development Mode:</strong> Newly registered users can sign in with any password. Demo accounts use specific passwords.
-        </div>
       </CardContent>
     </Card>
   );

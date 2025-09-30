@@ -194,22 +194,32 @@ export default function MessagesPage() {
       console.log('All users from Supabase:', allUsers);
       console.log('Current user:', currentUser);
       
-      // Filter out current user and show appropriate recipients based on role
-      let recipients = allUsers.filter(user => 
-        user.id !== currentUser.id && 
-        (currentUser.role === 'admin' || 
-         (currentUser.role === 'trainer' && (user.role === 'parent' || user.role === 'behaviorist')) ||
-         (currentUser.role === 'parent' && (user.role === 'trainer' || user.role === 'behaviorist')) ||
-         (currentUser.role === 'behaviorist' && (user.role === 'parent' || user.role === 'trainer')))
-      );
+      // Filter recipients based on role
+      let recipients: User[] = [];
       
-      // If no recipients found with role-based filtering, show all other users (except current user)
-      if (recipients.length === 0) {
-        recipients = allUsers.filter(user => user.id !== currentUser.id);
-        console.log('No role-based recipients found, showing all other users:', recipients);
+      if (currentUser.role === 'admin') {
+        // Admins can only message parent accounts
+        recipients = allUsers.filter(user =>
+          user.id !== currentUser.id && user.role === 'parent'
+        );
+      } else if (currentUser.role === 'trainer') {
+        // Trainers can message parents and behaviorists
+        recipients = allUsers.filter(user =>
+          user.id !== currentUser.id && (user.role === 'parent' || user.role === 'behaviorist')
+        );
+      } else if (currentUser.role === 'parent') {
+        // Parents can message trainers and behaviorists
+        recipients = allUsers.filter(user =>
+          user.id !== currentUser.id && (user.role === 'trainer' || user.role === 'behaviorist')
+        );
+      } else if (currentUser.role === 'behaviorist') {
+        // Behaviorists can message parents and trainers
+        recipients = allUsers.filter(user =>
+          user.id !== currentUser.id && (user.role === 'parent' || user.role === 'trainer')
+        );
       }
       
-      console.log('Available recipients:', recipients);
+      console.log('Available recipients for', currentUser.role + ':', recipients);
       return recipients;
     } catch (error) {
       console.error('Error fetching recipients:', error);

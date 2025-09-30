@@ -94,23 +94,38 @@ export const createMessage = (messageData: Omit<Message, 'id' | 'created_at' | '
   return newMessage;
 };
 
+// Helper function to filter announcements by 48-hour retention
+const filterAnnouncementsByRetention = (messages: Message[]): Message[] => {
+  const fortyEightHoursAgo = new Date();
+  fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+  
+  return messages.filter(message => {
+    if (!message.is_announcement) return true;
+    
+    const messageDate = new Date(message.created_at);
+    return messageDate >= fortyEightHoursAgo;
+  });
+};
+
 export const getAllMessages = (): Message[] => {
-  return db.messages;
+  return filterAnnouncementsByRetention(db.messages);
 };
 
 export const getMessagesByUser = (userId: string): Message[] => {
-  return db.messages.filter(message => 
-    message.sender_id === userId || 
+  const userMessages = db.messages.filter(message =>
+    message.sender_id === userId ||
     message.recipient_id === userId ||
     message.is_announcement
   );
+  return filterAnnouncementsByRetention(userMessages);
 };
 
 export const getMessagesByRecipient = (recipientId: string): Message[] => {
-  return db.messages.filter(message => 
+  const recipientMessages = db.messages.filter(message =>
     message.recipient_id === recipientId ||
     message.is_announcement
   );
+  return filterAnnouncementsByRetention(recipientMessages);
 };
 
 export const getMessagesBySender = (senderId: string): Message[] => {
@@ -149,17 +164,20 @@ export const searchMessages = (searchTerm: string, userId?: string): Message[] =
   const lowerCaseSearchTerm = searchTerm.toLowerCase();
   const filteredMessages = userId ? getMessagesByUser(userId) : getAllMessages();
 
-  return filteredMessages.filter(message =>
+  const searchResults = filteredMessages.filter(message =>
     message.subject.toLowerCase().includes(lowerCaseSearchTerm) ||
     message.content.toLowerCase().includes(lowerCaseSearchTerm)
   );
+  
+  return filterAnnouncementsByRetention(searchResults);
 };
 
 export const getUnreadMessages = (userId: string): Message[] => {
-  return db.messages.filter(message => 
+  const unreadMessages = db.messages.filter(message =>
     (message.recipient_id === userId || message.is_announcement) &&
     !message.read_at
   );
+  return filterAnnouncementsByRetention(unreadMessages);
 };
 
 export const markMessageAsRead = (messageId: string): Message | undefined => {

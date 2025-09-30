@@ -174,7 +174,6 @@ export default function RegisterPage() {
             >
               <option value="parent">Dog Parent</option>
               <option value="trainer">Trainer</option>
-              <option value="admin">Administrator</option>
             </select>
           </div>
           
@@ -218,14 +217,6 @@ export default function RegisterPage() {
               Sign in
             </Link>
           </div>
-        </div>
-
-        {/* Development Note */}
-        <div className="mt-6 p-3 bg-[rgb(0_32_96)] bg-opacity-10 border border-[rgb(0_32_96)] border-opacity-20 rounded-md">
-          <p className="text-xs text-[rgb(0_32_96)]">
-            <strong>Development Mode:</strong> Registration works immediately without email confirmation. 
-            In production, you would receive a confirmation email.
-          </p>
         </div>
       </CardContent>
     </Card>

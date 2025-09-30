@@ -61,10 +61,25 @@ export const getAllMessages = async (): Promise<Message[]> => {
   return data || [];
 };
 
+// Helper function to filter announcements by 48-hour retention
+const filterAnnouncementsByRetention = (announcements: Message[]): Message[] => {
+  const fortyEightHoursAgo = new Date();
+  fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+  
+  return announcements.filter(announcement => {
+    if (!announcement.is_announcement) return true;
+    
+    const messageDate = new Date(announcement.created_at);
+    return messageDate >= fortyEightHoursAgo;
+  });
+};
+
 export const getMessagesByUser = async (userId: string): Promise<Message[]> => {
   if (!isSupabaseConfigured()) {
     console.log('Using local database for message retrieval');
-    return localMessages.getMessagesByUser(userId);
+    const userMessages = localMessages.getMessagesByUser(userId);
+    // Apply 48-hour retention filter to local messages too
+    return filterAnnouncementsByRetention(userMessages);
   }
 
   try {
@@ -92,11 +107,15 @@ export const getMessagesByUser = async (userId: string): Promise<Message[]> => {
       console.error('Error fetching direct messages:', directError);
     }
 
-    // Get announcements (either all announcements or role-specific ones)
+    // Get announcements from the last 48 hours only
+    const fortyEightHoursAgo = new Date();
+    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+    
     const { data: announcements, error: announcementError } = await supabase
       .from(MESSAGES_TABLE)
       .select('*')
       .eq('is_announcement', true)
+      .gte('created_at', fortyEightHoursAgo.toISOString())
       .order('created_at', { ascending: false });
 
     if (announcementError) {
@@ -120,23 +139,34 @@ export const getMessagesByUser = async (userId: string): Promise<Message[]> => {
     return allMessages;
   } catch (error) {
     console.error('Supabase message retrieval failed, falling back to local database:', error);
-    return localMessages.getMessagesByUser(userId);
+    const userMessages = localMessages.getMessagesByUser(userId);
+    // Apply 48-hour retention filter to fallback messages too
+    return filterAnnouncementsByRetention(userMessages);
   }
 };
 
 export const getMessagesByRecipient = async (recipientId: string): Promise<Message[]> => {
-  const { data, error } = await supabase
-    .from(MESSAGES_TABLE)
-    .select('*')
-    .or(`recipient_id.eq.${recipientId},is_announcement.eq.true`)
-    .order('created_at', { ascending: false });
+  try {
+    // Get direct messages and announcements from the last 48 hours
+    const fortyEightHoursAgo = new Date();
+    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+    
+    const { data, error } = await supabase
+      .from(MESSAGES_TABLE)
+      .select('*')
+      .or(`recipient_id.eq.${recipientId},and(is_announcement.eq.true,created_at.gte.${fortyEightHoursAgo.toISOString()})`)
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching messages by recipient:', error);
+    if (error) {
+      console.error('Error fetching messages by recipient:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getMessagesByRecipient:', error);
     return [];
   }
-
-  return data || [];
 };
 
 export const getMessagesBySender = async (senderId: string): Promise<Message[]> => {
@@ -223,19 +253,28 @@ export const searchMessages = async (searchTerm: string, userId?: string): Promi
 };
 
 export const getUnreadMessages = async (userId: string): Promise<Message[]> => {
-  const { data, error } = await supabase
-    .from(MESSAGES_TABLE)
-    .select('*')
-    .or(`recipient_id.eq.${userId},is_announcement.eq.true`)
-    .is('read_at', null)
-    .order('created_at', { ascending: false });
+  try {
+    // Get unread direct messages and unread announcements from the last 48 hours
+    const fortyEightHoursAgo = new Date();
+    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+    
+    const { data, error } = await supabase
+      .from(MESSAGES_TABLE)
+      .select('*')
+      .or(`recipient_id.eq.${userId},and(is_announcement.eq.true,created_at.gte.${fortyEightHoursAgo.toISOString()})`)
+      .is('read_at', null)
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching unread messages:', error);
+    if (error) {
+      console.error('Error fetching unread messages:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getUnreadMessages:', error);
     return [];
   }
-
-  return data || [];
 };
 
 export const markMessageAsRead = async (messageId: string): Promise<Message | null> => {
