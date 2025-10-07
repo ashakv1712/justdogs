@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import DogAssessmentBot from '@/components/DogAssessmentBot';
 
 export default function Home() {
   const [showAssessmentBot, setShowAssessmentBot] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
 
   const handleAssessmentComplete = (result: { code?: string; dogProfile?: { name: string; age: string; breed: string; size: string; energyLevel: string; behaviorIssues: string[]; healthIssues: string[]; environment: string; experience: string }; recommendations?: { primaryProgram: string; secondaryPrograms: string[]; reasoning: string; urgency: 'low' | 'medium' | 'high' } }) => {
     setShowAssessmentBot(false);
@@ -20,45 +21,67 @@ export default function Home() {
     }
   };
 
+  // Handle scroll events to hide/show scroll indicator
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      if (scrollTop > 100) {
+        setShowScrollIndicator(false);
+      } else {
+        setShowScrollIndicator(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Smooth scroll to next section
+  const scrollToNext = () => {
+    const nextSection = document.getElementById('team');
+    if (nextSection) {
+      nextSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[rgb(0_32_96)] from-opacity-5 via-white to-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                          <h1 className="text-2xl font-bold text-[rgb(0_32_96)] flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-              <img 
-                src="/images/icons/logo.png" 
-                alt="Just Dogs Logo" 
-                className="w-6 h-6 object-contain"
-              />
-            </div>
-            <span>Just Dogs</span>
-          </h1>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+                <img 
+                  src="/images/icons/logo.png" 
+                  alt="Just Dogs Logo" 
+                  className="w-6 h-6 object-contain"
+                />
               </div>
+              <span className="ml-3 text-xl font-semibold text-gray-900">Just Dogs</span>
             </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="#team" className="text-gray-600 hover:text-[rgb(0_32_96)] font-medium transition-colors">
-                Our Team
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link href="#team" className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm">
+                Team
               </Link>
-              <Link href="#gallery" className="text-gray-600 hover:text-[rgb(0_32_96)] font-medium transition-colors">
-                Our Dogs
+              <Link href="#gallery" className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm">
+                Gallery
               </Link>
-              <Link href="#services" className="text-gray-600 hover:text-[rgb(0_32_96)] font-medium transition-colors">
+              <Link href="#services" className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm">
                 Services
               </Link>
             </nav>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <Link href="/login">
-                <Button variant="outline" className="border-[rgb(0_32_96)] text-[rgb(0_32_96)] hover:bg-[rgb(0_32_96)] hover:text-white transition-colors">
+                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
                   Sign In
                 </Button>
               </Link>
               <Link href="/register">
-                <Button className="bg-[rgb(0_32_96)] hover:bg-[rgb(0_24_72)] transition-colors">
+                <Button size="sm" className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6">
                   Get Started
                 </Button>
               </Link>
@@ -68,60 +91,36 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Animated background dog images */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-32 h-32 rounded-full overflow-hidden animate-bounce" style={{animationDuration: '3s'}}>
-            <img src="/1000524395.jpg" alt="Happy dog" className="w-full h-full object-cover" />
-          </div>
-          <div className="absolute top-20 right-20 w-24 h-24 rounded-full overflow-hidden animate-pulse" style={{animationDuration: '2s'}}>
-            <img src="/1000524743.jpg" alt="Playful dog" className="w-full h-full object-cover" />
-          </div>
-          <div className="absolute bottom-20 left-20 w-28 h-28 rounded-full overflow-hidden animate-bounce" style={{animationDuration: '4s', animationDelay: '1s'}}>
-            <img src="/1000525223.jpg" alt="Training dog" className="w-full h-full object-cover" />
-          </div>
-          <div className="absolute bottom-10 right-10 w-20 h-20 rounded-full overflow-hidden animate-pulse" style={{animationDuration: '2.5s', animationDelay: '0.5s'}}>
-            <img src="/1000531276.jpg" alt="Cute dog" className="w-full h-full object-cover" />
-          </div>
-        </div>
+      <section className="relative py-32 px-6">
         
-        {/* Floating elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-[rgb(0_32_96)] bg-opacity-20 rounded-full animate-ping" style={{animationDuration: '3s'}}></div>
-          <div className="absolute top-1/3 right-1/3 w-3 h-3 bg-[rgb(0_32_96)] bg-opacity-30 rounded-full animate-ping" style={{animationDuration: '2s', animationDelay: '1s'}}></div>
-          <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-[rgb(0_32_96)] bg-opacity-25 rounded-full animate-ping" style={{animationDuration: '4s', animationDelay: '2s'}}></div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto text-center relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight text-center animate-pulse" style={{animationDuration: '3s'}}>
-            Professional Dog Services for{' '}
-            <span className="text-[rgb(0_32_96)] bg-gradient-to-r from-[rgb(0_32_96)] to-[rgb(0_24_96)] bg-clip-text text-transparent animate-bounce" style={{animationDuration: '2s'}}>
-              Every Need
-            </span>
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 mb-6 leading-tight tracking-tight">
+            Professional Dog Services
           </h1>
-          <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-600 mb-8 leading-relaxed">
+            For every need
+          </h2>
+          <p className="text-lg sm:text-xl text-gray-500 mb-12 max-w-2xl mx-auto leading-relaxed">
             From pet care to specialized training, we provide comprehensive dog services 
-            with professional management. Track progress, manage bookings, and ensure 
-            the best care for every dog in your care.
+            with professional management.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               onClick={() => setShowAssessmentBot(true)}
               size="lg" 
-              className="text-lg px-8 py-4 bg-[rgb(0_32_96)] hover:bg-[rgb(0_24_72)] transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 animate-pulse"
-              style={{animationDuration: '2s'}}
+              className="text-lg px-8 py-4 bg-gray-900 hover:bg-gray-800 text-white rounded-full transition-all duration-300 hover:scale-105"
             >
-              🐕 Get Personalized Recommendations
+              Get Personalized Recommendations
             </Button>
             <Link href="/register">
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="text-lg px-8 py-4 border-2 border-[rgb(0_32_96)] text-[rgb(0_32_96)] hover:bg-[rgb(0_32_96)] hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                className="text-lg px-8 py-4 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full transition-all duration-300"
               >
-                Sign Up
+                Start Your Journey
               </Button>
             </Link>
           </div>
@@ -147,6 +146,33 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Scroll Down Animation */}
+      {showScrollIndicator && (
+        <div className="flex justify-center py-8 bg-gradient-to-b from-white to-gray-50 transition-opacity duration-500">
+          <button 
+            onClick={scrollToNext}
+            className="flex flex-col items-center space-y-3 animate-scroll-bounce hover:scale-110 transition-transform duration-300 cursor-pointer group"
+            aria-label="Scroll to next section"
+          >
+            <span className="text-sm text-gray-500 font-medium group-hover:text-[rgb(0_32_96)] transition-colors">
+              Scroll to explore
+            </span>
+            <div className="w-6 h-10 border-2 border-[rgb(0_32_96)] rounded-full flex justify-center group-hover:border-[rgb(0_24_72)] transition-colors relative">
+              <div className="w-1 h-3 bg-[rgb(0_32_96)] rounded-full mt-2 animate-scroll-indicator group-hover:bg-[rgb(0_24_72)] transition-colors"></div>
+            </div>
+            <svg 
+              className="w-4 h-4 text-[rgb(0_32_96)] animate-scroll-bounce group-hover:text-[rgb(0_24_72)] transition-colors" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+              style={{animationDelay: '0.3s'}}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Meet the Trainers */}
       <section id="team" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
