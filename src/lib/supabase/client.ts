@@ -12,6 +12,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // createBrowserClient is a singleton — calling it again with the same URL/key
 // returns the same instance, staying in sync with the server-side cookie storage.
 export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
+  cookieOptions: {
+    // Without maxAge the browser treats these as session cookies and clears them
+    // when the window closes, signing the user out. 400 days matches Chrome's cap.
+    maxAge: 60 * 60 * 24 * 400,
+    sameSite: 'lax',
+    path: '/',
+    secure: process.env.NODE_ENV === 'production',
+  },
   auth: {
     autoRefreshToken: true,
     persistSession: true,

@@ -6,7 +6,7 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f9fafb",
+  "background_color": "#002060",
   "theme_color": "#002060",
   "icons": [
     {
@@ -19,7 +19,13 @@
       "src": "/images/icons/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icons/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

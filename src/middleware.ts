@@ -30,7 +30,17 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: any) {
-          response.cookies.set({ name, value, ...options });
+          // Ensure refreshed tokens are also written as persistent cookies.
+          // Without maxAge here the Set-Cookie header has no expiry, making
+          // the browser forget the session on close even if the browser client
+          // originally wrote a persistent cookie.
+          const opts = {
+            maxAge: 60 * 60 * 24 * 400,
+            sameSite: 'lax' as const,
+            path: '/',
+            ...options,
+          };
+          response.cookies.set({ name, value, ...opts });
         },
         remove(name: string, options: any) {
           response.cookies.set({ name, value: '', ...options });

@@ -10,6 +10,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Singleton — same instance as client.ts when called with the same URL/key.
 export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
+  cookieOptions: {
+    maxAge: 60 * 60 * 24 * 400,
+    sameSite: 'lax',
+    path: '/',
+    secure: process.env.NODE_ENV === 'production',
+  },
   auth: {
     autoRefreshToken: true,
     persistSession: true,
