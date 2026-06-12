@@ -47,7 +47,28 @@ export function useAuth() {
           }
           return;
         }
-        
+
+        // Enforce "don't stay signed in" preference: if the user didn't want to
+        // persist their session and this is a new browser session (sessionStorage cleared
+        // on browser close), sign them out automatically.
+        if (typeof window !== 'undefined') {
+          const noPersist = localStorage.getItem('justdogs_no_persist') === 'true';
+          if (noPersist) {
+            const hasActiveTab = sessionStorage.getItem('justdogs_active_session') === '1';
+            if (!hasActiveTab) {
+              await supabase.auth.signOut();
+              if (mounted) {
+                setUser(null);
+                setInitialized(true);
+                setLoading(false);
+              }
+              return;
+            }
+          }
+          // Mark this tab as having an active session
+          sessionStorage.setItem('justdogs_active_session', '1');
+        }
+
         // Session exists, get user profile
         setLoading(true);
         const currentUser = await getCurrentUser();

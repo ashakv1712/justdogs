@@ -411,3 +411,26 @@ input[type="datetime-local"].border {
   color: rgb(255 255 255) !important;
 }
 
+/* Safe area padding for notched devices (iPhone X and later) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent checkbox/radio from being overridden by the 44px min-height mobile rule */
+input[type="checkbox"],
+input[type="radio"] {
+  min-height: unset;
+  min-width: unset;
+}
+
+/* Card hover lift on non-touch devices */
+@media (hover: hover) {
+  .card-hover {
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  .card-hover:hover {
+    box-shadow: 0 4px 16px rgba(0, 32, 96, 0.12);
+    transform: translateY(-1px);
+  }
+}
+

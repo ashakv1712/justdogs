@@ -32,6 +32,15 @@ const navigation = [
   { name: 'Profile', href: '/profile', icon: UserIcon, mobileLabel: 'Profile' },
 ];
 
+// Mobile bottom nav: 5 most-used items (News is accessible via drawer)
+const mobileBottomNav = [
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, mobileLabel: 'Home' },
+  { name: 'Dogs', href: '/dogs', icon: UserGroupIcon, mobileLabel: 'Dogs' },
+  { name: 'Bookings & Sessions', href: '/bookings-sessions', icon: CalendarIcon, mobileLabel: 'Bookings' },
+  { name: 'Store', href: '/store', icon: ShoppingBagIcon, mobileLabel: 'Store' },
+  { name: 'Profile', href: '/profile', icon: UserIcon, mobileLabel: 'Profile' },
+];
+
 const staffDogPhotosNav = {
   name: 'Dog photos',
   href: '/dog-photos',
@@ -328,26 +337,26 @@ export default function DashboardLayout({
           </div>
         </main>
 
-        {/* Mobile bottom navigation - compact so all 6 items fit on small screens */}
+        {/* Mobile bottom navigation */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 lg:hidden safe-area-pb">
-          <nav className="flex">
-            {mainNav.map((item) => {
-              const isActive = pathname === item.href;
-              const label = (item as { mobileLabel?: string }).mobileLabel ?? item.name;
+          <nav className="flex h-14">
+            {mobileBottomNav.map((item) => {
+              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex flex-1 min-w-0 flex-col items-center justify-center py-1.5 px-0.5 text-[10px] font-medium transition-colors relative ${
+                  className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
                     isActive
                       ? 'text-[rgb(0_32_96)]'
-                      : 'text-gray-500 hover:text-[rgb(0_32_96)]'
+                      : 'text-gray-400 hover:text-[rgb(0_32_96)]'
                   }`}
                 >
-                  <div className="relative flex-shrink-0">
-                    <item.icon className="h-5 w-5 mb-0.5" />
-                  </div>
-                  <span className="truncate w-full text-center max-w-[52px]">{label}</span>
+                  {isActive && (
+                    <span className="absolute top-0 inset-x-3 h-0.5 bg-[rgb(0_32_96)] rounded-b-full" />
+                  )}
+                  <item.icon className={`h-5 w-5 ${isActive ? 'stroke-2' : 'stroke-[1.5px]'}`} />
+                  <span className="leading-none">{item.mobileLabel}</span>
                 </Link>
               );
             })}

@@ -422,27 +422,10 @@ export async function updatePassword(newPassword: string) {
  */
 export async function clearAuthState() {
     console.log('Clearing corrupted auth state...');
-    
+
     try {
-        // Sign out from Supabase
+        // Session is cookie-based via @supabase/ssr — signing out clears everything
         await supabase.auth.signOut();
-        
-        // Clear localStorage manually if needed
-        if (typeof window !== 'undefined') {
-            // Clear the specific auth token
-            localStorage.removeItem('sb-pajtampwqutuuidklxbv-auth-token');
-            
-            // Also clear any legacy tokens that might exist
-            localStorage.removeItem('supabase.auth.token');
-            
-            // Clear any other Supabase-related items
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('sb-') || key.includes('supabase')) {
-                    localStorage.removeItem(key);
-                }
-            });
-        }
-        
         console.log('Auth state cleared successfully');
     } catch (error) {
         console.error('Error clearing auth state:', error);

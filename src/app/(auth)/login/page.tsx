@@ -11,6 +11,7 @@ import { signIn } from '@/lib/auth/auth';
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [staySignedIn, setStaySignedIn] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -51,9 +52,17 @@ function LoginForm() {
       clearTimeout(timeoutId);
       
       if (result && result.user) {
+        // Save "stay signed in" preference before redirect
+        if (!staySignedIn) {
+          localStorage.setItem('justdogs_no_persist', 'true');
+          sessionStorage.removeItem('justdogs_active_session');
+        } else {
+          localStorage.removeItem('justdogs_no_persist');
+        }
+
         // Show success message briefly before redirect
         setSuccess('Welcome back! Redirecting to your dashboard...');
-        
+
         // Small delay to show success message
         setTimeout(() => {
           router.push('/dashboard');
@@ -143,7 +152,26 @@ function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          
+
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={staySignedIn}
+                onChange={(e) => setStaySignedIn(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 accent-[rgb(0_32_96)]"
+                style={{ minHeight: 'unset' }}
+              />
+              <span className="text-sm text-gray-600">Keep me signed in</span>
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-sm text-[rgb(0_32_96)] hover:text-[rgb(0_24_72)] hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
           <Button
             type="submit"
             className="w-full bg-[rgb(0_32_96)] hover:bg-[rgb(0_24_72)]"
@@ -153,15 +181,8 @@ function LoginForm() {
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
-        
+
         <div className="mt-6 text-center space-y-2">
-          <Link
-            href="/forgot-password"
-            className="text-sm text-[rgb(0_32_96)] hover:text-[rgb(0_24_72)] hover:underline"
-          >
-            Forgot your password?
-          </Link>
-          
           <div className="text-sm text-gray-600">
             Don&apos;t have an account?{' '}
             <Link
