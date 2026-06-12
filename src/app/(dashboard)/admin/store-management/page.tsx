@@ -21,11 +21,17 @@ interface StoreItem {
   name: string;
   description: string;
   photo_url: string;
+  image_id: string;
   tags: string[];
   price: number;
   stock_quantity: number;
   is_active: boolean;
   created_at: string;
+  uploaded_images?: {
+    id: string;
+    file_url: string;
+    alt_text: string;
+  };
 }
 
 interface Order {
@@ -75,6 +81,7 @@ export default function StoreManagementPage() {
     name: '',
     description: '',
     photo_url: '',
+    image_id: '',
     tags: '',
     price: '',
     stock_quantity: '',
@@ -89,7 +96,7 @@ export default function StoreManagementPage() {
     }
   }, [activeTab]);
 
-  const getAuthHeaders = async () => {
+  const getAuthHeaders = async (): Promise<Record<string, string>> => {
     const { data: { session } } = await supabase.auth.getSession();
     return session?.access_token
       ? { Authorization: `Bearer ${session.access_token}` }
@@ -176,6 +183,7 @@ export default function StoreManagementPage() {
           name: '',
           description: '',
           photo_url: '',
+          image_id: '',
           tags: '',
           price: '',
           stock_quantity: '',
@@ -202,13 +210,48 @@ export default function StoreManagementPage() {
     setItemForm({
       name: item.name,
       description: item.description,
-      photo_url: item.photo_url,
+      photo_url: item.photo_url || '',
+      image_id: item.image_id || '',
       tags: item.tags.join(', '),
       price: item.price.toString(),
       stock_quantity: item.stock_quantity.toString(),
       is_active: item.is_active
     });
     setShowItemModal(true);
+  };
+
+  const handleDeleteItem = async (item: StoreItem) => {
+    if (!confirm(`Are you sure you want to delete "${item.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch(`/api/store/items?id=${item.id}`, {
+        method: 'DELETE',
+        headers: authHeaders
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Reload items
+        await loadItems();
+        
+        // Show appropriate success message
+        if (result.deactivated) {
+          alert('Item has been deactivated (cannot delete due to existing orders)');
+        } else {
+          alert('Item deleted successfully!');
+        }
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error || 'Failed to delete item'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      alert('Failed to delete item. Please try again.');
+    }
   };
 
   const handleApproveOrder = async (order: Order) => {
@@ -331,10 +374,10 @@ export default function StoreManagementPage() {
           {items.map((item) => (
             <Card key={item.id} className="overflow-hidden">
               <div className="aspect-square bg-gray-100 relative">
-                {item.photo_url ? (
+                {(item.uploaded_images?.file_url || item.photo_url) ? (
                   <img
-                    src={item.photo_url}
-                    alt={item.name}
+                    src={item.uploaded_images?.file_url || item.photo_url}
+                    alt={item.uploaded_images?.alt_text || item.name}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -372,6 +415,15 @@ export default function StoreManagementPage() {
                   >
                     <PencilIcon className="h-4 w-4 mr-1" />
                     Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDeleteItem(item)}
+                    className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                  >
+                    <TrashIcon className="h-4 w-4 mr-1" />
+                    Delete
                   </Button>
                 </div>
               </div>
@@ -470,12 +522,20 @@ export default function StoreManagementPage() {
                   Product Image
                 </label>
                 <ImageUpload
-                  currentImageUrl={itemForm.photo_url}
+                  currentImageUrl={itemForm.photo_url || (editingItem?.uploaded_images?.file_url)}
                   onImageUploaded={(imageData) => {
-                    setItemForm({...itemForm, photo_url: imageData.url});
+                    setItemForm({
+                      ...itemForm,
+                      image_id: imageData.id,
+                      photo_url: imageData.url
+                    });
                   }}
                   onImageRemoved={() => {
-                    setItemForm({...itemForm, photo_url: ''});
+                    setItemForm({
+                      ...itemForm,
+                      image_id: '',
+                      photo_url: ''
+                    });
                   }}
                   entityType="store_item"
                   entityId={editingItem?.id}
@@ -504,7 +564,7 @@ export default function StoreManagementPage() {
                 onChange={(e) => setItemForm({...itemForm, stock_quantity: e.target.value})}
               />
               
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-gray-700">
                 <input
                   type="checkbox"
                   checked={itemForm.is_active}

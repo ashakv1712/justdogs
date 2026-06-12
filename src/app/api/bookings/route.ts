@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     dogs(name, breed),
     trainers:trainer_id(full_name),
     parents:parent_id(full_name),
-    farm_day:farm_day_id(id, date, trainer_id, farm_day_trainer:trainer_id(full_name))
+    farm_day:farm_day_id(id, date, farm_day_trainers(users:user_id(full_name)))
   `);
 
   if (user.role === 'parent') {

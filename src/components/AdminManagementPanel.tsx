@@ -69,7 +69,8 @@ interface Booking {
 interface FarmDay {
   id: string;
   date: string;
-  trainer_id: string | null;
+  trainer_ids: string[];
+  trainers_display: string | null;
   trainer_name: string | null;
   max_capacity: number | null;
   notes: string | null;
@@ -78,7 +79,7 @@ interface FarmDay {
 
 interface FarmDayFormState {
   date: string;
-  trainer_id: string;
+  trainer_ids: string[];
   max_capacity: string;
   notes: string;
 }
@@ -191,7 +192,7 @@ export function AdminManagementPanel() {
   const [farmDays, setFarmDays] = useState<FarmDay[]>([]);
   const [showCreateFarmDay, setShowCreateFarmDay] = useState(false);
   const [editingFarmDay, setEditingFarmDay] = useState<FarmDay | null>(null);
-  const emptyFarmDayForm: FarmDayFormState = { date: '', trainer_id: '', max_capacity: '', notes: '' };
+  const emptyFarmDayForm: FarmDayFormState = { date: '', trainer_ids: [], max_capacity: '', notes: '' };
   const [farmDayForm, setFarmDayForm] = useState<FarmDayFormState>(emptyFarmDayForm);
   const [farmDayFormError, setFarmDayFormError] = useState<string | null>(null);
 
@@ -483,7 +484,7 @@ export function AdminManagementPanel() {
     setEditingFarmDay(fd);
     setFarmDayForm({
       date: fd.date,
-      trainer_id: fd.trainer_id || '',
+      trainer_ids: fd.trainer_ids || [],
       max_capacity: fd.max_capacity !== null ? String(fd.max_capacity) : '',
       notes: fd.notes || '',
     });
@@ -499,7 +500,7 @@ export function AdminManagementPanel() {
     try {
       const payload = {
         date: farmDayForm.date,
-        trainer_id: farmDayForm.trainer_id || null,
+        trainer_ids: farmDayForm.trainer_ids,
         max_capacity: farmDayForm.max_capacity || null,
         notes: farmDayForm.notes || null,
       };
@@ -1103,9 +1104,9 @@ export function AdminManagementPanel() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        Trainer:{' '}
-                        <span className={fd.trainer_name ? 'font-medium text-gray-800' : 'text-amber-600'}>
-                          {fd.trainer_name || 'Unassigned'}
+                        Trainers:{' '}
+                        <span className={fd.trainers_display ? 'font-medium text-gray-800' : 'text-amber-600'}>
+                          {fd.trainers_display || 'Unassigned'}
                         </span>
                       </p>
                       {fd.notes && <p className="text-xs text-gray-400 mt-0.5">{fd.notes}</p>}
@@ -1935,18 +1936,30 @@ export function AdminManagementPanel() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Assigned Trainer <span className="text-gray-400 font-normal">(optional)</span>
+                  Assigned Trainers <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
-                <select
-                  value={farmDayForm.trainer_id}
-                  onChange={(e) => setFarmDayForm({ ...farmDayForm, trainer_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(0_32_96)] text-sm"
-                >
-                  <option value="">Unassigned</option>
-                  {approvedTrainers.map((t) => (
-                    <option key={t.id} value={t.id}>{t.full_name}</option>
-                  ))}
-                </select>
+                <div className="border border-gray-300 rounded-lg p-2 space-y-1.5 max-h-40 overflow-y-auto">
+                  {approvedTrainers.length === 0 ? (
+                    <p className="text-sm text-gray-400 px-1">No approved trainers</p>
+                  ) : (
+                    approvedTrainers.map((t) => (
+                      <label key={t.id} className="flex items-center gap-2 px-1 cursor-pointer text-sm text-gray-800">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-[rgb(0_32_96)]"
+                          checked={farmDayForm.trainer_ids.includes(t.id)}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                              ? [...farmDayForm.trainer_ids, t.id]
+                              : farmDayForm.trainer_ids.filter((id) => id !== t.id);
+                            setFarmDayForm({ ...farmDayForm, trainer_ids: next });
+                          }}
+                        />
+                        {t.full_name}
+                      </label>
+                    ))
+                  )}
+                </div>
               </div>
 
               <div>

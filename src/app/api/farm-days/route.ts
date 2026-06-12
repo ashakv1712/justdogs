@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('farm_days')
-    .select('*, trainers:trainer_id(full_name)')
+    .select('*, farm_day_trainers(user_id, users:user_id(id, full_name))')
     .order('date', { ascending: true });
 
   if (upcoming) {
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   const { data: farmDays, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Get booking counts per farm day in one query
+  // Booking counts per farm day
   const { data: counts } = await supabase
     .from('bookings')
     .select('farm_day_id')
@@ -51,17 +51,22 @@ export async function GET(request: NextRequest) {
     if (b.farm_day_id) countMap[b.farm_day_id] = (countMap[b.farm_day_id] ?? 0) + 1;
   });
 
-  const result = (farmDays ?? []).map((fd: any) => ({
-    id: fd.id,
-    date: fd.date,
-    trainer_id: fd.trainer_id,
-    trainer_name: fd.trainers?.full_name ?? null,
-    max_capacity: fd.max_capacity ?? null,
-    notes: fd.notes ?? null,
-    total_bookings: countMap[fd.id] ?? 0,
-    created_at: fd.created_at,
-    updated_at: fd.updated_at,
-  }));
+  const result = (farmDays ?? []).map((fd: any) => {
+    const trainers = (fd.farm_day_trainers ?? [])
+      .map((t: any) => t.users)
+      .filter(Boolean);
+    return {
+      id: fd.id,
+      date: fd.date,
+      trainer_ids: trainers.map((t: any) => t.id),
+      trainers_display: trainers.map((t: any) => t.full_name).join(', ') || null,
+      max_capacity: fd.max_capacity ?? null,
+      notes: fd.notes ?? null,
+      total_bookings: countMap[fd.id] ?? 0,
+      created_at: fd.created_at,
+      updated_at: fd.updated_at,
+    };
+  });
 
   return NextResponse.json(result);
 }
@@ -81,7 +86,6 @@ export async function POST(request: NextRequest) {
     .from('farm_days')
     .insert([{
       date: body.date,
-      trainer_id: body.trainer_id || null,
       max_capacity: body.max_capacity ? parseInt(body.max_capacity) : null,
       notes: body.notes || null,
       created_at: new Date().toISOString(),
@@ -91,6 +95,17 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Insert trainer assignments into junction table
+  const trainerIds: string[] = Array.isArray(body.trainer_ids)
+    ? body.trainer_ids.filter(Boolean)
+    : [];
+  if (trainerIds.length > 0) {
+    await supabase.from('farm_day_trainers').insert(
+      trainerIds.map((uid: string) => ({ farm_day_id: data.id, user_id: uid }))
+    );
+  }
+
   return NextResponse.json({ success: true, farm_day: data });
 }
 
@@ -109,7 +124,6 @@ export async function PUT(request: NextRequest) {
     .from('farm_days')
     .update({
       date: updates.date,
-      trainer_id: updates.trainer_id || null,
       max_capacity: updates.max_capacity ? parseInt(updates.max_capacity) : null,
       notes: updates.notes || null,
       updated_at: new Date().toISOString(),
@@ -120,6 +134,18 @@ export async function PUT(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: 'Farm day not found' }, { status: 404 });
+
+  // Replace trainer assignments: delete all, re-insert
+  await supabase.from('farm_day_trainers').delete().eq('farm_day_id', id);
+  const trainerIds: string[] = Array.isArray(updates.trainer_ids)
+    ? updates.trainer_ids.filter(Boolean)
+    : [];
+  if (trainerIds.length > 0) {
+    await supabase.from('farm_day_trainers').insert(
+      trainerIds.map((uid: string) => ({ farm_day_id: id, user_id: uid }))
+    );
+  }
+
   return NextResponse.json({ success: true, farm_day: data });
 }
 
