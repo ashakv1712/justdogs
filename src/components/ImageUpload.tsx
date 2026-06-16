@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { PhotoIcon, XMarkIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
+import { supabase } from '@/lib/supabase/client-browser';
 
 interface ImageUploadProps {
   currentImageUrl?: string;
@@ -54,8 +55,15 @@ export function ImageUpload({
       if (entityId) formData.append('entityId', entityId);
       if (altText) formData.append('altText', altText);
 
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeaders: Record<string, string> = {};
+      if (session?.access_token) {
+        authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch('/api/upload/image', {
         method: 'POST',
+        headers: authHeaders,
         body: formData
       });
 

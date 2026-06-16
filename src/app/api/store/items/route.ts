@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { name, description, photo_url, image_id, tags, price, stock_quantity } = body;
+    const { name, description, photo_url, image_id, tags, price, stock_quantity, is_active } = body;
 
     const { data: item, error } = await supabase
       .from('store_items')
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         tags,
         price,
         stock_quantity,
+        is_active: is_active !== undefined ? is_active : true,
         created_by: user.id
       })
       .select(`

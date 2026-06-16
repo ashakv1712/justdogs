@@ -48,12 +48,23 @@ export async function POST(request: NextRequest) {
     const filename = `${timestamp}-${randomString}.${fileExtension}`;
     const filePath = `${user.id}/${filename}`;
 
+    // Ensure the images bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(b => b.name === 'images');
+    if (!bucketExists) {
+      await supabase.storage.createBucket('images', {
+        public: true,
+        allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
+        fileSizeLimit: 5 * 1024 * 1024
+      });
+    }
+
     // Convert file to buffer
     const fileBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(fileBuffer);
 
     // Upload to Supabase storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('images')
       .upload(filePath, uint8Array, {
         contentType: file.type,
@@ -90,7 +101,7 @@ export async function POST(request: NextRequest) {
       console.log('Could not determine image dimensions:', error);
     }
 
-    // Save metadata to database
+    // Save metadata to database (non-fatal — image is already in storage)
     const { data: imageRecord, error: dbError } = await supabase
       .from('uploaded_images')
       .insert({
@@ -112,16 +123,22 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (dbError) {
-      console.error('Database insert error:', dbError);
-      
-      // Clean up uploaded file if database insert fails
-      await supabase.storage
-        .from('images')
-        .remove([filePath]);
-
-      return NextResponse.json({ 
-        error: 'Failed to save image metadata' 
-      }, { status: 500 });
+      console.error('Database insert error (non-fatal):', dbError.message);
+      // Return the URL anyway so the image can be displayed even without metadata
+      return NextResponse.json({
+        success: true,
+        image: {
+          id: null,
+          filename,
+          originalFilename: file.name,
+          url: urlData.publicUrl,
+          size: file.size,
+          mimeType: file.type,
+          width: null,
+          height: null,
+          altText: altText || null
+        }
+      });
     }
 
     return NextResponse.json({
