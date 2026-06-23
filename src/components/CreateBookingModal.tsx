@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { XMarkIcon, CalendarIcon, CheckIcon } from '@heroicons/react/24/outline';
-import { authenticatedGet } from '@/lib/api/apiClient';
+import { XMarkIcon, CalendarIcon, CheckIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { authenticatedGet, authenticatedPost } from '@/lib/api/apiClient';
 
 export interface BookingFormData {
   dog_ids: string[];
@@ -74,7 +74,7 @@ function formatFarmDate(dateStr: string): string {
   });
 }
 
-export function CreateBookingModal({ isOpen, onClose, onSave, dogs, initialValues }: CreateBookingModalProps) {
+export function CreateBookingModal({ isOpen, onClose, onSave, dogs, userRole, initialValues }: CreateBookingModalProps) {
   const [dog_ids, setDogIds] = useState<string[]>([]);
   const [booking_type, setBookingType] = useState('');
   const [farm_day_id, setFarmDayId] = useState('');
@@ -92,6 +92,48 @@ export function CreateBookingModal({ isOpen, onClose, onSave, dogs, initialValue
   const [loadingTypes, setLoadingTypes] = useState(false);
   const [farmDays, setFarmDays] = useState<FarmDayOption[]>([]);
   const [loadingFarmDays, setLoadingFarmDays] = useState(false);
+
+  // Admin: inline farm day creation
+  const [showNewFarmDay, setShowNewFarmDay] = useState(false);
+  const [newFarmDayDate, setNewFarmDayDate] = useState('');
+  const [newFarmDayCapacity, setNewFarmDayCapacity] = useState('');
+  const [creatingFarmDay, setCreatingFarmDay] = useState(false);
+  const [newFarmDayError, setNewFarmDayError] = useState('');
+
+  const isAdmin = userRole === 'admin';
+
+  const handleCreateFarmDay = async () => {
+    if (!newFarmDayDate) { setNewFarmDayError('Date is required'); return; }
+    setCreatingFarmDay(true);
+    setNewFarmDayError('');
+    try {
+      const res = await authenticatedPost('/api/farm-days', {
+        date: newFarmDayDate,
+        max_capacity: newFarmDayCapacity ? parseInt(newFarmDayCapacity) : null,
+      });
+      const json = await res.json();
+      if (!res.ok) { setNewFarmDayError(json.error || 'Failed to create farm day'); return; }
+      const created = json.farm_day;
+      const newOption: FarmDayOption = {
+        id: created.id,
+        date: created.date,
+        trainer_name: null,
+        max_capacity: created.max_capacity ?? null,
+        total_bookings: 0,
+      };
+      setFarmDays(prev => [...prev, newOption].sort((a, b) => a.date.localeCompare(b.date)));
+      setFarmDayId(created.id);
+      setStartTime(created.date);
+      setErrors(p => ({ ...p, farm_day_id: '' }));
+      setShowNewFarmDay(false);
+      setNewFarmDayDate('');
+      setNewFarmDayCapacity('');
+    } catch {
+      setNewFarmDayError('Failed to create farm day');
+    } finally {
+      setCreatingFarmDay(false);
+    }
+  };
 
   const durationDays = durationPresetDays === 0 ? customDays : durationPresetDays;
 
@@ -146,6 +188,10 @@ export function CreateBookingModal({ isOpen, onClose, onSave, dogs, initialValue
     setRecurringPattern('weekly');
     setRecurringOccurrences(4);
     setErrors({});
+    setShowNewFarmDay(false);
+    setNewFarmDayDate('');
+    setNewFarmDayCapacity('');
+    setNewFarmDayError('');
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleDog = (id: string) => {
@@ -326,16 +372,85 @@ export function CreateBookingModal({ isOpen, onClose, onSave, dogs, initialValue
 
             {/* ── Farm Day selector ── */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                <CalendarIcon className="inline h-4 w-4 mr-1 text-gray-400" />
-                Select Farm Day <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  <CalendarIcon className="inline h-4 w-4 mr-1 text-gray-400" />
+                  Select Farm Day <span className="text-red-500">*</span>
+                </label>
+                {isAdmin && !showNewFarmDay && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewFarmDay(true)}
+                    className="flex items-center gap-1 text-xs text-[rgb(0_32_96)] hover:underline font-medium"
+                  >
+                    <PlusIcon className="h-3.5 w-3.5" />
+                    New farm day
+                  </button>
+                )}
+              </div>
+
+              {/* Admin inline create form */}
+              {isAdmin && showNewFarmDay && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                  <p className="text-sm font-medium text-[rgb(0_32_96)]">Create a new farm day</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-700">Date <span className="text-red-500">*</span></label>
+                      <Input
+                        type="date"
+                        value={newFarmDayDate}
+                        onChange={e => { setNewFarmDayDate(e.target.value); setNewFarmDayError(''); }}
+                        min={new Date().toISOString().split('T')[0]}
+                        disabled={creatingFarmDay}
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-700">Max capacity</label>
+                      <Input
+                        type="number"
+                        placeholder="Unlimited"
+                        value={newFarmDayCapacity}
+                        onChange={e => setNewFarmDayCapacity(e.target.value)}
+                        min="1"
+                        disabled={creatingFarmDay}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+                  {newFarmDayError && <p className="text-xs text-red-600">{newFarmDayError}</p>}
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCreateFarmDay}
+                      disabled={creatingFarmDay}
+                      className="bg-[rgb(0_32_96)] hover:bg-[rgb(0_24_72)] text-white text-xs"
+                    >
+                      {creatingFarmDay ? 'Creating…' : 'Create & Select'}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => { setShowNewFarmDay(false); setNewFarmDayDate(''); setNewFarmDayCapacity(''); setNewFarmDayError(''); }}
+                      disabled={creatingFarmDay}
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {loadingFarmDays ? (
                 <p className="text-sm text-gray-400 italic">Loading available farm days…</p>
-              ) : farmDays.length === 0 ? (
+              ) : farmDays.length === 0 && !showNewFarmDay ? (
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-sm text-amber-700">No upcoming farm days are available yet.</p>
-                  <p className="text-xs text-amber-600 mt-1">An admin needs to create farm day slots first.</p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    {isAdmin ? 'Use "New farm day" above to create one.' : 'An admin needs to create farm day slots first.'}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
